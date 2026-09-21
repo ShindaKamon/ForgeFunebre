@@ -17,8 +17,8 @@ public abstract class EnemyBase : MonoBehaviour
     [SerializeField] protected int   damage     = 1;
 
     [Header("Détection")]
-    [SerializeField] protected float detectionRange = 5f;
-    [SerializeField] protected float attackRange    = 1f;
+    [SerializeField] protected float detectionRange = 3.5f;
+    [SerializeField] protected float attackRange    = 2f;
     [SerializeField] protected LayerMask playerLayer;
 
     [Header("Attaque")]
@@ -33,6 +33,12 @@ public abstract class EnemyBase : MonoBehaviour
     protected BodyBase      bodyComponent;  // Activé à la mort
     public bool DyingFromLaunch { get; private set; } = false;
 
+    // ---- Ligne de vue ----
+    // Point de référence approximatif du buste (pas les pieds), pour ne pas
+    // faire toucher le linecast au sol sous l'ennemi/le joueur.
+    private const float DefaultLineOfSightOffset = 0.5f;
+    private CapsuleCollider2D bodyCapsule; // cache — évite un GetComponent par frame
+
     // ---- State Machine simple ----
     protected enum EnemyState { Patrol, Alert, Attack, Dead }
     protected EnemyState currentState = EnemyState.Patrol;
@@ -45,6 +51,7 @@ public abstract class EnemyBase : MonoBehaviour
         spriteRenderer  = GetComponent<SpriteRenderer>();
         bodyComponent   = GetComponent<BodyBase>();
         enemyAnimator   = GetComponent<EnemyAnimator>();
+        bodyCapsule     = GetComponent<CapsuleCollider2D>();
         currentHealth   = maxHealth;
 
          if (playerLayer.value == 0)
@@ -149,14 +156,32 @@ public abstract class EnemyBase : MonoBehaviour
     }
 
     // ---- Détection du joueur ----
+    // Distance + ligne de vue : un obstacle sur le layer Ground (mur, sol,
+    // plateforme) entre l'ennemi et le joueur bloque la détection même si
+    // la distance est dans le rayon.
     protected bool PlayerInRange(float range)
     {
         BodyBase current = TransferSystem.Instance?.CurrentBody;
         if (current == null) return false;
-        
-        float dist = Vector2.Distance(transform.position, current.transform.position);
 
-        return dist <= range;
+        float dist = Vector2.Distance(transform.position, current.transform.position);
+        if (dist > range) return false;
+
+        Vector3 origin = GetLineOfSightPoint(transform, bodyCapsule);
+        Vector3 target = GetLineOfSightPoint(current.transform, current.GetComponent<CapsuleCollider2D>());
+
+        RaycastHit2D hit = Physics2D.Linecast(origin, target, LayerMask.GetMask("Ground"));
+        return hit.collider == null;
+    }
+
+    // ---- Point de référence "buste" pour la ligne de vue ----
+    // Évite de partir/arriver aux pieds (transform.position), qui repose sur
+    // le sol et ferait toucher le linecast immédiatement.
+    private static Vector3 GetLineOfSightPoint(Transform t, CapsuleCollider2D capsule)
+    {
+        return capsule != null
+            ? t.position + (Vector3)capsule.offset
+            : t.position + Vector3.up * DefaultLineOfSightOffset;
     }
 
     protected Transform GetPlayerTransform()
@@ -167,10 +192,14 @@ public abstract class EnemyBase : MonoBehaviour
     // ---- Debug Gizmos — visualisation des zones de détection/attaque ----
     protected virtual void OnDrawGizmosSelected()
     {
+        // transform.position est ancré aux pieds du sprite : on recentre les
+        // cercles sur le corps via l'offset du collider quand c'est possible.
+        Vector3 center = GetLineOfSightPoint(transform, GetComponent<CapsuleCollider2D>());
+
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRange);
+        Gizmos.DrawWireSphere(center, detectionRange);
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        Gizmos.DrawWireSphere(center, attackRange);
     }
 
 }

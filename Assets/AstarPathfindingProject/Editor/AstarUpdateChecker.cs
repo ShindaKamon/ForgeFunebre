@@ -220,8 +220,25 @@ namespace Pathfinding {
 						   "&branch="+AstarPath.Branch;
 
 #if UNITY_2018_1_OR_NEWER
-			updateCheckDownload = UnityWebRequest.Get(query);
-			updateCheckDownload.SendWebRequest();
+			try {
+				updateCheckDownload = UnityWebRequest.Get(query);
+				updateCheckDownload.SendWebRequest();
+			} catch (System.Exception e) {
+				// PATCH (vendored third-party file, A* Pathfinding Project):
+				// updateURL above is plain HTTP. Unity 6+ blocks insecure connections by default
+				// (Player Settings > Other Settings > Configuration > Allow downloads over HTTP =
+				// Not Allowed), so SendWebRequest() throws an InvalidOperationException synchronously,
+				// right here, before lastUpdateCheck below gets a chance to run. Without this
+				// try/catch, that meant lastUpdateCheck was NEVER updated, so CheckForUpdates()
+				// (driven by EditorApplication.update) retried on every single editor frame forever,
+				// spamming the console with the same exception indefinitely.
+				// This catch just logs once and lets lastUpdateCheck still update below, so the next
+				// attempt only happens after updateCheckRate (currently 1 day), same as a normal
+				// successful/failed check. If the A* Pathfinding Project package is updated later,
+				// this file will likely be overwritten and this fix will need to be re-applied.
+				updateCheckDownload = null;
+				Debug.LogWarning("A* Pathfinding Project: could not check for updates (insecure/blocked connection or network error). Will retry in " + updateCheckRate + " day(s).\n" + e.Message);
+			}
 #else
 			updateCheckDownload = new WWW(query);
 #endif
