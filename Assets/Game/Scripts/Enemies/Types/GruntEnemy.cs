@@ -48,7 +48,6 @@ public class GruntEnemy : EnemyBase
     // ---- Patrouille manuelle — pas de A* ----
     protected override void OnPatrol()
     {
-        Debug.Log($"[Grunt:{name}] OnPatrol — PlayerInRange={PlayerInRange(detectionRange)}");
         if (PlayerInRange(detectionRange))
         {
             currentState = EnemyState.Alert;
@@ -88,7 +87,6 @@ public class GruntEnemy : EnemyBase
     // ---- Alerte — suit le joueur via A* ----
     protected override void OnAlert()
     {
-        Debug.Log($"[Grunt:{name}] OnAlert appelé");
         Transform player = GetPlayerTransform();
 
         if (player == null)
@@ -173,8 +171,6 @@ public class GruntEnemy : EnemyBase
 
         // Déplacement horizontal uniquement — la gravité gère le vertical
         rb.linearVelocity = new Vector2(direction.x * chaseSpeed, rb.linearVelocity.y);
-
-        Debug.Log($"[Grunt] direction.x={direction.x:F2} flipX={spriteRenderer.flipX}");
 
         spriteRenderer.flipX = direction.x > 0;
 

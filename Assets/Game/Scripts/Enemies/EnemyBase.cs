@@ -155,7 +155,6 @@ public abstract class EnemyBase : MonoBehaviour
         if (current == null) return false;
         
         float dist = Vector2.Distance(transform.position, current.transform.position);
-        Debug.Log($"[EnemyBase:{name}] dist={dist:F1} range={range:F1} inRange={dist <= range}");
 
         return dist <= range;
     }
@@ -163,6 +162,15 @@ public abstract class EnemyBase : MonoBehaviour
     protected Transform GetPlayerTransform()
     {
         return TransferSystem.Instance?.CurrentBody?.transform;
+    }
+
+    // ---- Debug Gizmos — visualisation des zones de détection/attaque ----
+    protected virtual void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
 
 }

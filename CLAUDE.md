@@ -23,7 +23,7 @@ Pour lancer/valider une modification de gameplay, ouvrir la scène `Assets/Scene
 
 ### Boucle de possession (cœur du gameplay)
 
-`TransferSystem` (fichier `Core/TransfertSystem.cs`, classe `TransferSystem` — l'orthographe diverge volontairement/par erreur historique entre fichier et classe) est le singleton (`TransferSystem.Instance`) qui possède tout le game loop de la possession :
+`TransferSystem` (fichier `Core/TransferSystem.cs`) est le singleton (`TransferSystem.Instance`) qui possède tout le game loop de la possession :
 
 - **Transfert Contact** : touche dédiée, cherche le `BodyBase` mort le plus proche dans `contactRange` sur le layer `Body`.
 - **Transfert Lancé** : viser (souris) + relâcher lance Morthis comme projectile ; s'il touche un ennemi et le tue (`EnemyBase.TakeDamageFromLaunch`), possession immédiate du cadavre ; sinon le lancer échoue et on reste dans le corps actuel.

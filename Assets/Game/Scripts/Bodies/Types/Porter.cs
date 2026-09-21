@@ -19,14 +19,7 @@ public class Porter : BodyBase
     // Capacité : brise les murs/blocs destructibles proches
     public override void UseSpecialAbility()
     {
-        // TODO Étape 7 : briser les murs destructibles
-        // Nécessite le script Breakable.cs (pas encore créé)
-        // Vector2 direction = spriteRenderer.flipX ? Vector2.left : Vector2.right;
-        // Vector2 origin    = (Vector2)transform.position + direction * 0.5f;
-        // Collider2D hit = Physics2D.OverlapCircle(origin, breakRange, breakableLayer);
-        // if (hit != null && hit.TryGetComponent<Breakable>(out var breakable))
-        //     breakable.Break();
-
+        // TODO : bris de mur, dépend de Breakable.cs (pas encore créé)
         Debug.Log("[Porter] Capacité spéciale — bris de mur (pas encore implémenté)");
     }
 
