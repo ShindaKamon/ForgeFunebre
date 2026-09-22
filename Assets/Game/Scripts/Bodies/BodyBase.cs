@@ -90,15 +90,18 @@ public abstract class BodyBase : MonoBehaviour
             TransferSystem.Instance?.ForceEject(this, cause);
 
         bodyPhysics.SetMoveInput(0f);
+        bodyPhysics.StopControl();
 
-        GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
-        Collider2D col = GetComponent<Collider2D>();
-        if (col != null) col.isTrigger = true;
+        gameObject.layer = LayerMask.NameToLayer("Body");
 
         if (spriteRenderer != null)
             spriteRenderer.color = new Color(0.3f, 0.3f, 0.3f);
 
         EventBus.Publish(new OnBodyDied { Body = this, Cause = cause });
+        // Laisse la gravité normale agir jusqu'à l'atterrissage, puis fige
+        // le corps — évite qu'il continue sa trajectoire (chute/saut) une
+        // fois Kinematic, ou reste figé en l'air s'il meurt en vol.
+        StartCoroutine(FreezeAfterLanding());
         Invoke(nameof(Deactivate), 3f);
     }
 
@@ -111,6 +114,7 @@ public abstract class BodyBase : MonoBehaviour
 
         decaySystem.StopDecay();
         bodyPhysics.SetMoveInput(0f);
+        bodyPhysics.StopControl();
 
         // Remet en état cadavre — Kinematic + trigger + couleur grise
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
@@ -154,6 +158,7 @@ public abstract class BodyBase : MonoBehaviour
 
         gameObject.layer  = LayerMask.NameToLayer("Player");
 
+        bodyPhysics.ResetModifiers(); // ré-active le contrôle coupé par StopControl() à la mort
         decaySystem.StartDecay();
         bodyHealth.ResetHealth();
 

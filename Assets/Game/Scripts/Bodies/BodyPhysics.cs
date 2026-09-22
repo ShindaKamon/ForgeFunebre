@@ -31,6 +31,7 @@ public class BodyPhysics : MonoBehaviour
     public bool isGrounded;
     private bool jumpRequested;
     private float horizontalInput;
+    private bool controlEnabled = true;
 
     // ---- Modificateur de vitesse (pour les Résonances coop) ----
     private float speedModifier = 1f;
@@ -43,6 +44,9 @@ public class BodyPhysics : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        // Interpolation : évite le micro-stutter des sprites pixel perfect
+        // entre deux ticks FixedUpdate (désync physique/rendu)
+        rb.interpolation = RigidbodyInterpolation2D.Interpolate;
     }
 
     private void FixedUpdate()
@@ -53,6 +57,13 @@ public class BodyPhysics : MonoBehaviour
         if (rb.bodyType == RigidbodyType2D.Static) return;
 
         CheckGround();
+
+        // Corps mort : on garde CheckGround (utilisé par FreezeAfterLanding)
+        // mais on arrête le contrôle — sinon ApplyBetterGravity continue de
+        // manipuler la vélocité, et un Rigidbody2D Kinematic avance toujours
+        // selon sa vélocité en 2D, ce qui fait "voler"/"tomber" le cadavre.
+        if (!controlEnabled) return;
+
         ApplyMovement();
         ApplyJump();
         ApplyBetterGravity();
@@ -167,7 +178,12 @@ public class BodyPhysics : MonoBehaviour
         speedModifier = 1f;
         horizontalInput = 0f;
         jumpRequested = false;
+        controlEnabled = true;
     }
+
+    // Coupe le contrôle du corps — appelé à la mort, laisse la gravité
+    // normale du Rigidbody2D agir jusqu'au figeage par FreezeAfterLanding
+    public void StopControl() => controlEnabled = false;
 
     private void PreventWallSlide()
     {

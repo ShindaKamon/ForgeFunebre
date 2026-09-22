@@ -110,8 +110,13 @@ public class TransferSystem : MonoBehaviour
         if (inputActions.Player.TransferContact.WasPressedThisFrame())
             TryContactTransfer();
 
-        // Visée : clic gauche maintenu
+        // Attaque au contact : bouton Principal (clic droit / gâchette gauche manette)
+        // Action indépendante de la visée — ne doit pas déclencher StartAiming.
         if (inputActions.Player.PrimaryAttack.WasPressedThisFrame())
+            TryMeleeAttack();
+
+        // Visée : bouton Spécial maintenu (clic gauche / gâchette droite manette)
+        if (inputActions.Player.SpecialAttack.WasPressedThisFrame())
             StartAiming();
 
         if (isAiming)
@@ -129,9 +134,6 @@ public class TransferSystem : MonoBehaviour
                 }
             }
         }
-
-        if (inputActions.Player.PrimaryAttack.WasPressedThisFrame())
-        TryMeleeAttack();
     }
 
     // ============================================================

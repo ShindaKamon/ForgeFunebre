@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Forge Funèbre est un jeu de plateforme 2D Unity où l'on incarne un esprit (**Morthis**) sans corps propre, capable de posséder des cadavres (`BodyBase`) et des ennemis vaincus pour progresser. Chaque corps possédé a une jauge de pourriture qui le détruit avec le temps — il faut changer de corps avant qu'il ne s'effondre.
 
+GDD complet (vision, narration, 7 strates, types de corps prévus, méta-progression, coop Verak/Résonance) : `Docs/GDD.md`. À consulter avant de juger "mort" du code qui semble inutilisé — plusieurs enums de `GameEnums.cs` (`SoulType.Verak`, `TransferMode.Resonance/Plunge/Echo`) anticipent des systèmes du GDD pas encore implémentés (coop local, résonance), ce ne sont pas des oublis.
+
 - Unity **6000.4.0f1**, render pipeline **URP**, projet 2D (Sprite/Tilemap/2D Animation).
 - Pathfinding via l'asset tiers **A\* Pathfinding Project** (`Assets/AstarPathfindingProject`, namespace `Pathfinding`) — ne pas modifier ces fichiers, ce sont ceux du package.
 - Input géré via le nouveau Input System : `Assets/Settings/ForgeFunebre_InputActions.inputactions` (classe générée `ForgeFunebre_InputActions`).
@@ -27,6 +29,7 @@ Pour lancer/valider une modification de gameplay, ouvrir la scène `Assets/Scene
 
 - **Transfert Contact** : touche dédiée, cherche le `BodyBase` mort le plus proche dans `contactRange` sur le layer `Body`.
 - **Transfert Lancé** : viser (souris) + relâcher lance Morthis comme projectile ; s'il touche un ennemi et le tue (`EnemyBase.TakeDamageFromLaunch`), possession immédiate du cadavre ; sinon le lancer échoue et on reste dans le corps actuel.
+- ⚠️ Noms d'actions Input System trompeurs : `PrimaryAttack` déclenche l'attaque au contact (`TryMeleeAttack`) et `SpecialAttack` déclenche la visée du lancer (`StartAiming`) — l'inverse de ce que les noms suggèrent. Vérifier `TransferSystem.HandleInput` avant de supposer le mapping.
 - Règle centrale : on choisit sa cible **avant** de quitter l'ancien corps ; l'ancien corps meurt (`BodyBase.DieFromTransfer`) au moment exact où le nouveau est possédé (`OnPossess`) — jamais d'état "sans corps" transitoire, sauf `ForceEject` (corps qui meurt pendant qu'on l'occupe → cherche un corps de secours en contact immédiat, sinon Game Over).
 - Gère aussi mouvement du corps actif, attaque au contact et mise à jour de la cible caméra Cinemachine.
 
@@ -52,6 +55,8 @@ Les types concrets (`Bodies/Types/Porter.cs`, `Pillard.cs`) héritent de `BodyBa
 `Core/EventBus.cs` : bus d'événements statique typé par struct (convention `OnXxx`, immuables). `Subscribe<T>`/`Publish<T>`/`Unsubscribe<T>` où `T : struct`. Toujours se désabonner dans `OnDisable`/`OnDestroy`. Les nouveaux événements se déclarent en bas de ce même fichier, pas ailleurs. `EventBus.Clear()` est prévu pour un changement de scène.
 
 `GameEnums.cs` centralise tous les enums partagés (`BodyType`, `DeathCause`, `EnvironmentType`, `SoulType`, `TransferMode`) pour éviter les dépendances circulaires — ajouter tout nouvel enum ici plutôt que dans un fichier dédié.
+
+`GameStarter` (`Core/GameStarter.cs`) est un bootstrap temporaire posé en scène qui appelle `TransferSystem.PossessInitialBody` au démarrage pour donner un premier corps à Morthis ; commentaire du fichier lui-même : prévu pour être remplacé par un `GameManager`.
 
 ### UI
 
